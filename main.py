@@ -1,0 +1,33 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import os
+
+app = FastAPI(title="WorldGlass API", version="1.0.0")
+
+# Montar archivos estáticos
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Configurar templates
+templates = Jinja2Templates(directory="templates")
+
+# Importar rutas
+from routes import chat, quotes
+
+app.include_router(chat.router, prefix="", tags=["chat"])
+app.include_router(quotes.router, prefix="/api", tags=["quotes"])
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Página principal con el chat"""
+    return templates.TemplateResponse("chat.html", {"request": request})
+
+@app.get("/health")
+async def health():
+    """Health check para Railway"""
+    return {"status": "healthy", "service": "worldglass-api"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
