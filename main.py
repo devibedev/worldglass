@@ -13,10 +13,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Importar rutas
-from routes import chat, quotes
+from routes import chat, quotes, auth
 
 app.include_router(chat.router, prefix="", tags=["chat"])
 app.include_router(quotes.router, prefix="/api", tags=["quotes"])
+app.include_router(auth.router, prefix="/api", tags=["auth"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
