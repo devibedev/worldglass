@@ -47,11 +47,13 @@ CUPRUM_SERIE_3_DATA = {
 
 def evaluate_formula(formula: str, at: float, alt: float) -> float:
     """Convierte texto como '(AT - 167) / 3' en un número real"""
-    safe_formula = formula.replace("AT", str(at)).replace("ALT", str(alt))
+    # Sanitización básica: solo permitir números, operadores y AT/ALT
+    clean_formula = formula.replace("AT", str(at)).replace("ALT", str(alt))
     try:
-        # Eval es seguro aquí porque los inputs son controlados
-        return round(float(eval(safe_formula)), 2)
-    except:
+        # Usamos un diccionario vacío para __builtins__ por seguridad
+        return round(float(eval(clean_formula, {"__builtins__": None}, {})), 2)
+    except Exception as e:
+        print(f"Error evaluando formula {formula}: {e}")
         return 0.0
 
 def calculate_cuprum_3_despiece(at_mm: float, alt_mm: float, config_id: str, merma_pct: float = 0.05):

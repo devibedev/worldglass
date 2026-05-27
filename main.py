@@ -1,5 +1,4 @@
 from dotenv import load_dotenv
-# 1. CARGAR VARIABLES ANTES QUE TODO
 load_dotenv()
 
 from fastapi import FastAPI, Request
@@ -8,43 +7,44 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import logging
-from database import get_db
+from contextlib import asynccontextmanager
+from database import get_db, close_db_pool
+from routes import chat, quotes, auth
 
 # Configurar logs para ver errores detallados en la consola de Railway
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="WorldGlass API", version="1.0.0")
+# Silenciar logs innecesarios de librerías para ver mejor lo importante
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
-# Asegurar que existan las carpetas para evitar errores de montaje
-os.makedirs("static", exist_ok=True)
-os.makedirs("templates", exist_ok=True)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-@app.on_event("startup")
-async def startup_db_test():
-    """Prueba la conexión a la base de datos al arrancar"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manejo de inicio y cierre de recursos"""
+    logger.info("Iniciando aplicación...")
     try:
         async with get_db() as conn:
             val = await conn.fetchval("SELECT 1")
             logger.info(f"✅ Conexión a DB exitosa: Test {val}")
     except Exception as e:
         logger.error(f"❌ ERROR CRÍTICO: No se pudo conectar a la DB: {e}")
-        # No detenemos el app para que Railway no entre en bucle de reinicio, 
-        # pero el log nos dirá qué pasó.
+    
+    yield
+    # Al cerrar la app, cerramos el pool de conexiones
+    await close_db_pool()
+    logger.info("Aplicación cerrada.")
 
-try:
-    # Importar rutas de forma segura
-    from routes import chat, quotes, auth
-    # Registrar routers con prefijo consistente /api
-    app.include_router(chat.router, prefix="/api", tags=["chat"])
-    app.include_router(quotes.router, prefix="/api", tags=["quotes"])
-    app.include_router(auth.router, prefix="/api", tags=["auth"])
-    logger.info("Rutas cargadas exitosamente")
-except Exception as e:
-    logger.error(f"Error cargando rutas: {e}")
+app = FastAPI(title="WorldGlass API", version="1.0.0", lifespan=lifespan)
+
+os.makedirs("static", exist_ok=True)
+os.makedirs("templates", exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+app.include_router(chat.router, prefix="/api", tags=["chat"])
+app.include_router(quotes.router, prefix="/api", tags=["quotes"])
+app.include_router(auth.router, prefix="/api", tags=["auth"])
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
