@@ -20,14 +20,15 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manejo de inicio y cierre de recursos"""
-    logger.info("Iniciando aplicación...")
+    """Ciclo de vida: Se ejecuta al arrancar y al apagar"""
+    logger.info(f"🚀 Iniciando WorldGlass API en puerto {os.environ.get('PORT', 8000)}...")
     try:
         async with get_db() as conn:
             val = await conn.fetchval("SELECT 1")
             logger.info(f"✅ Conexión a DB exitosa: Test {val}")
     except Exception as e:
-        logger.error(f"❌ ERROR CRÍTICO: No se pudo conectar a la DB: {e}")
+        logger.error(f"❌ ERROR DE BASE DE DATOS: {e}")
+        logger.warning("La app seguirá funcionando pero las funciones de DB fallarán.")
     
     yield
     # Al cerrar la app, cerramos el pool de conexiones

@@ -20,9 +20,10 @@ async def get_db_pool():
         if not DATABASE_URL:
             raise ValueError("DATABASE_URL no está configurada")
         
-        # Railway requiere SSL, pero en local a veces no. 
-        # Si la URL contiene 'railway.app', forzamos SSL.
-        ssl_option = 'require' if 'railway.app' in DATABASE_URL else None
+        # Railway requiere SSL en producción. 
+        # Detectamos si estamos en Railway o si la URL no es localhost.
+        is_railway = os.getenv("RAILWAY_ENVIRONMENT") or "railway" in str(DATABASE_URL)
+        ssl_option = 'require' if is_railway else None
         
         _pool = await asyncpg.create_pool(DATABASE_URL, ssl=ssl_option, min_size=1, max_size=10)
     return _pool
