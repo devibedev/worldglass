@@ -7,9 +7,14 @@ import os
 app = FastAPI(title="WorldGlass API", version="1.0.0")
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # Montar archivos estáticos (solo si el directorio existe)
 if os.path.isdir("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
+=======
+# Montar archivos estáticos (Fase 1: desactivado hasta que necesitemos CSS/JS)
+# app.mount("/static", StaticFiles(directory="static"), name="static")
+>>>>>>> Stashed changes
 =======
 # Montar archivos estáticos (Fase 1: desactivado hasta que necesitemos CSS/JS)
 # app.mount("/static", StaticFiles(directory="static"), name="static")
