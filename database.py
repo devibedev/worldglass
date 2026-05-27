@@ -14,7 +14,11 @@ async def get_db():
         result = await conn.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
     """
     if not DATABASE_URL:
-        raise ValueError("DATABASE_URL no está configurada en variables de entorno")
+        raise ValueError(
+            "DATABASE_URL no está configurada. " +
+            "En local: instala PostgreSQL y configura DATABASE_URL. " +
+            "En Railway: se configura automáticamente."
+        )
 
     conn = await asyncpg.connect(DATABASE_URL)
     try:
