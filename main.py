@@ -6,8 +6,9 @@ import os
 
 app = FastAPI(title="WorldGlass API", version="1.0.0")
 
-# Montar archivos estáticos
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Montar archivos estáticos (solo si el directorio existe)
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Configurar templates
 templates = Jinja2Templates(directory="templates")
@@ -31,4 +32,4 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
