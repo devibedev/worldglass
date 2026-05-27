@@ -6,6 +6,7 @@ import os
 
 app = FastAPI(title="WorldGlass API", version="1.0.0")
 
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
@@ -24,6 +25,11 @@ if os.path.isdir("static"):
 # Montar archivos estáticos (Fase 1: desactivado hasta que necesitemos CSS/JS)
 # app.mount("/static", StaticFiles(directory="static"), name="static")
 >>>>>>> Stashed changes
+=======
+# Montar archivos estáticos (solo si el directorio existe)
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+>>>>>>> origin/railway/fix-deploy-a8bcb0
 
 # Configurar templates
 templates = Jinja2Templates(directory="templates")
