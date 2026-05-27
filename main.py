@@ -1,9 +1,14 @@
+from dotenv import load_dotenv
+# 1. CARGAR VARIABLES ANTES QUE TODO
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import logging
+from database import get_db
 
 # Configurar logs para ver errores detallados en la consola de Railway
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +22,18 @@ os.makedirs("templates", exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+@app.on_event("startup")
+async def startup_db_test():
+    """Prueba la conexión a la base de datos al arrancar"""
+    try:
+        async with get_db() as conn:
+            val = await conn.fetchval("SELECT 1")
+            logger.info(f"✅ Conexión a DB exitosa: Test {val}")
+    except Exception as e:
+        logger.error(f"❌ ERROR CRÍTICO: No se pudo conectar a la DB: {e}")
+        # No detenemos el app para que Railway no entre en bucle de reinicio, 
+        # pero el log nos dirá qué pasó.
 
 try:
     # Importar rutas de forma segura

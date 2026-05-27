@@ -1,3 +1,118 @@
+import re
+import math
+
+CUPRUM_SERIE_3_DATA = {
+    "configuraciones": {
+        "XO_PUERTA_CERCO_TRASLAPE_PUERTA": {
+            "perfiles": [
+                {"comp": "Riel 3\"", "clave": "69957", "cant": 1, "formula": "AT"},
+                {"comp": "Jamba (cabezal)", "clave": "67826", "cant": 1, "formula": "AT"},
+                {"comp": "Adaptador paloma", "clave": "adapt_paloma", "cant": 1, "formula": "AT - 65"},
+                {"comp": "Jambas", "clave": "67826", "cant": 2, "formula": "ALT - 26"},
+                {"comp": "Zoclos", "clave": "67842", "cant": 3, "formula": "(AT - 167) / 3"},
+                {"comp": "Cabezales", "clave": "67836", "cant": 3, "formula": "(AT - 167) / 3"},
+                {"comp": "Cerco chapa fijo", "clave": "67847", "cant": 1, "formula": "ALT"},
+                {"comp": "Cerco chapa corredizo", "clave": "67847", "cant": 1, "formula": "ALT - 40"},
+                {"comp": "Traslape fijo", "clave": "67848", "cant": 1, "formula": "ALT"},
+                {"comp": "Traslapes corredizos", "clave": "67848", "cant": 3, "formula": "ALT - 40"}
+            ],
+            "vidrios": [
+                {"tipo": "fijo", "cant": 1, "w": "(AT - 117) / 3", "h": "ALT - 95"},
+                {"tipo": "corredizo", "cant": 2, "w": "(AT - 117) / 3", "h": "ALT - 135"}
+            ]
+        },
+        "OXXO_PUERTA_MOSQ_CERCO_TRASLAPE_PUERTA": {
+            "perfiles": [
+                {"comp": "Riel 3\"", "clave": "69957", "cant": 1, "formula": "AT"},
+                {"comp": "Jamba c/mosquitero", "clave": "67826", "cant": 1, "formula": "AT"},
+                {"comp": "Adaptador mosquitero", "clave": "9966", "cant": 1, "formula": "AT"},
+                {"comp": "Jambas", "clave": "67826", "cant": 2, "formula": "ALT - 26"},
+                {"comp": "Zoclos", "clave": "67842", "cant": 4, "formula": "(AT - 330) / 4"},
+                {"comp": "Cabezales", "clave": "67836", "cant": 4, "formula": "(AT - 330) / 4"},
+                {"comp": "Cerco chapa fijos", "clave": "67847", "cant": 2, "formula": "ALT - 30"},
+                {"comp": "Cerco chapa corredizos", "clave": "67847", "cant": 2, "formula": "ALT - 40"},
+                {"comp": "Traslapes fijos", "clave": "67848", "cant": 2, "formula": "ALT - 30"},
+                {"comp": "Traslapes corredizos", "clave": "67848", "cant": 2, "formula": "ALT - 40"},
+                {"comp": "Vertical mosquitero", "clave": "66534", "cant": 4, "formula": "ALT - 20"},
+                {"comp": "Horizontal mosquitero", "clave": "66533", "cant": 4, "formula": "(AT - 10) / 4"},
+                {"comp": "Adaptador OXXO", "clave": "adapt_oxxo", "cant": 2, "formula": "ALT - 50"}
+            ],
+            "vidrios": [
+                {"tipo": "fijo", "cant": 2, "w": "(AT - 265) / 4", "h": "ALT - 125"},
+                {"tipo": "corredizo", "cant": 2, "w": "(AT - 265) / 4", "h": "ALT - 135"}
+            ]
+        }
+    }
+}
+
+def evaluate_formula(formula: str, at: float, alt: float) -> float:
+    """Convierte texto como '(AT - 167) / 3' en un número real"""
+    safe_formula = formula.replace("AT", str(at)).replace("ALT", str(alt))
+    try:
+        # Eval es seguro aquí porque los inputs son controlados
+        return round(float(eval(safe_formula)), 2)
+    except:
+        return 0.0
+
+def calculate_cuprum_3_despiece(at_mm: float, alt_mm: float, config_id: str, merma_pct: float = 0.05):
+    """
+    Calcula el despiece completo para la Serie 3 Cuprum.
+    """
+    config = CUPRUM_SERIE_3_DATA["configuraciones"].get(config_id)
+    if not config:
+        return {"error": "Configuración no encontrada"}
+
+    resultado = {
+        "vista_cliente": {
+            "configuracion": config_id.replace("_", " "),
+            "dimensiones_totales": {"ancho": at_mm, "alto": alt_mm},
+            "vidrios": []
+        },
+        "vista_tecnica": {
+            "cortes_perfiles": [],
+            "optimizacion_barras": []
+        }
+    }
+
+    # 1. Calcular cortes individuales
+    claves_totales = {} # Para sumar longitud total por clave de perfil
+
+    for p in config["perfiles"]:
+        longitud_corte = evaluate_formula(p["formula"], at_mm, alt_mm)
+        resultado["vista_tecnica"]["cortes_perfiles"].append({
+            "componente": p["comp"],
+            "clave": p["clave"],
+            "cantidad": p["cant"],
+            "medida_mm": longitud_corte
+        })
+        
+        # Sumar para el cálculo de barras
+        claves_totales[p["clave"]] = claves_totales.get(p["clave"], 0) + (longitud_corte * p["cant"])
+
+    # 2. Calcular vidrios
+    for v in config["vidrios"]:
+        resultado["vista_cliente"]["vidrios"].append({
+            "tipo": v["tipo"],
+            "cantidad": v["cant"],
+            "ancho_mm": evaluate_formula(v["w"], at_mm, alt_mm),
+            "alto_mm": evaluate_formula(v["h"], at_mm, alt_mm)
+        })
+
+    # 3. Calcular barras de 6.10m necesarias
+    BARRA_STD_MM = 6100
+    for clave, longitud_total in claves_totales.items():
+        longitud_con_merma = longitud_total * (1 + merma_pct)
+        barras_necesarias = math.ceil(longitud_con_merma / BARRA_STD_MM)
+        
+        resultado["vista_tecnica"]["optimizacion_barras"].append({
+            "clave": clave,
+            "longitud_total_mm": round(longitud_total, 2),
+            "longitud_con_merma_mm": round(longitud_con_merma, 2),
+            "barras_6_10m": barras_necesarias
+        })
+
+    return resultado
+
 def calculate_shower_door(width_cm: int, height_cm: int, color: str = "natural", glass_type: str = "9mm") -> dict:
     """
     Calcula precio de cancel de baño basado en dimensiones y materiales.
