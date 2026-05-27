@@ -10,6 +10,8 @@
         .msg { margin: 10px 0; padding: 8px 12px; border-radius: 7px; max-width: 70%; }
         .user { background: #dcf8c6; margin-left: auto; }
         .bot { background: white; }
+        .tech-table { font-size: 0.8em; border-collapse: collapse; width: 100%; margin-top: 10px; background: #f9f9f9; }
+        .tech-table td, .tech-table th { border: 1px solid #ddd; padding: 4px; }
         .input { display: flex; padding: 10px; background: #f0f0f0; }
         input { flex: 1; padding: 10px; border: none; border-radius: 20px; }
         button { background: #075e54; color: white; border: none; padding: 10px 15px; margin-left: 5px; border-radius: 50%; }
@@ -44,7 +46,21 @@
                 body: JSON.stringify({msg: text})
             });
             let data = await res.json();
-            setTimeout(() => addMsg(data.reply, 'bot'), 500);
+            setTimeout(() => {
+                addMsg(data.reply, 'bot');
+                if (data.vista_tecnica) {
+                    let table = `<table class="tech-table"><tr><th>Clave</th><th>Corte (mm)</th><th>Cant.</th></tr>`;
+                    data.vista_tecnica.cortes_perfiles.forEach(c => {
+                        table += `<tr><td>${c.clave}</td><td>${c.medida_mm}</td><td>${c.cantidad}</td></tr>`;
+                    });
+                    table += `</table><p style="font-size:0.7em; margin-top:5px;">⚠️ <b>Resumen de compra:</b> `;
+                    data.vista_tecnica.optimizacion_barras.forEach(b => {
+                        table += `${b.clave}: ${b.barras_6_10m} barras | `;
+                    });
+                    table += `</p>`;
+                    addMsg(table, 'bot');
+                }
+            }, 500);
         }
     </script>
 </body>

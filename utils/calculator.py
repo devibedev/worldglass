@@ -85,7 +85,7 @@ def calculate_cuprum_3_despiece(at_mm: float, alt_mm: float, config_id: str, mer
             "cantidad": p["cant"],
             "medida_mm": longitud_corte
         })
-        
+
         # Sumar para el cálculo de barras
         claves_totales[p["clave"]] = claves_totales.get(p["clave"], 0) + (longitud_corte * p["cant"])
 
@@ -103,7 +103,7 @@ def calculate_cuprum_3_despiece(at_mm: float, alt_mm: float, config_id: str, mer
     for clave, longitud_total in claves_totales.items():
         longitud_con_merma = longitud_total * (1 + merma_pct)
         barras_necesarias = math.ceil(longitud_con_merma / BARRA_STD_MM)
-        
+
         resultado["vista_tecnica"]["optimizacion_barras"].append({
             "clave": clave,
             "longitud_total_mm": round(longitud_total, 2),
