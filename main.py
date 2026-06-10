@@ -18,6 +18,18 @@ logger = logging.getLogger(__name__)
 # Silenciar logs innecesarios de librerías para ver mejor lo importante
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
+app = FastAPI(title="WorldGlass API", version="1.0.0")
+
+# Montar archivos estáticos (solo si el directorio existe)
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Configurar templates
+templates = Jinja2Templates(directory="templates")
+
+# Silenciar logs innecesarios de librerías para ver mejor lo importante
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Ciclo de vida: Se ejecuta al arrancar y al apagar"""
