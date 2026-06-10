@@ -1,1 +1,1 @@
-# Routes package
+# Este archivo permite importar las rutas en main.py

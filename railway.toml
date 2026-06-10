@@ -4,9 +4,4 @@ builder = "NIXPACKS"
 [deploy]
 startCommand = "python main.py"
 healthcheckPath = "/health"
-healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
-
-[[services]]
-name = "web"
-source = "."
