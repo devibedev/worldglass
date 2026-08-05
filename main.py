@@ -11,6 +11,12 @@ from contextlib import asynccontextmanager
 from database import get_db, close_db_pool
 from routes import chat, quotes, auth
 
+# Montar archivos estáticos (solo si el directorio existe)
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Configurar templates
+templates = Jinja2Templates(directory="templates")
 # Configurar logs para ver errores detallados en la consola de Railway
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
